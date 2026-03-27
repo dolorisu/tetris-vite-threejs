@@ -71,6 +71,12 @@ h1 {
 }
 
 #game {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#game {
   max-width: 100%;
   height: auto;
 }
@@ -106,6 +112,31 @@ button:active {
 .controls span {
   color: #b9c4eb;
   font-size: 0.82rem;
+}
+
+.mobile-controls {
+  margin-top: 12px;
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.m-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #eaf2ff;
+  background: rgba(142, 129, 255, 0.22);
+  border-radius: 12px;
+  font-weight: 700;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.m-btn:active {
+  transform: scale(0.98);
+}
+
+.m-btn-wide {
+  grid-column: span 2;
 }
 
 .info-panel {
@@ -159,6 +190,14 @@ button:active {
   .layout {
     grid-template-columns: 1fr;
     margin-bottom: 20px;
+  }
+
+  .controls span {
+    font-size: 0.76rem;
+  }
+
+  .mobile-controls {
+    display: grid;
   }
 
   .info-panel {

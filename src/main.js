@@ -10,7 +10,16 @@ document.querySelector('#app').innerHTML = `
       <canvas id="game" width="300" height="600"></canvas>
       <div class="controls">
         <button id="startBtn">Mulai / Restart</button>
-        <span>← → gerak • ↑ rotasi • ↓ cepat • Space hard drop</span>
+        <span>Keyboard: ← → gerak • ↑ rotasi • ↓ cepat • Space hard drop</span>
+      </div>
+
+      <div class="mobile-controls" id="mobileControls" aria-label="Mobile controls">
+        <button class="m-btn" data-action="left">◀</button>
+        <button class="m-btn" data-action="rotate">⟳</button>
+        <button class="m-btn" data-action="right">▶</button>
+        <button class="m-btn" data-action="down">▼</button>
+        <button class="m-btn m-btn-wide" data-action="drop">HARD DROP</button>
+        <button class="m-btn m-btn-wide" data-action="hold">HOLD</button>
       </div>
     </section>
 
@@ -373,32 +382,122 @@ function resetGame() {
   dropCounter = 0
 }
 
-document.addEventListener('keydown', (e) => {
+function moveLeft() {
   if (gameOver) return
+  current.x--
+  if (collide(current)) current.x++
+}
 
+function moveRight() {
+  if (gameOver) return
+  current.x++
+  if (collide(current)) current.x--
+}
+
+function softDrop() {
+  if (gameOver) return
+  current.y++
+  if (collide(current)) {
+    current.y--
+    lockAndContinue()
+  }
+}
+
+function rotatePiece() {
+  if (gameOver) return
+  rotateCurrent()
+}
+
+function hardDropPiece() {
+  if (gameOver) return
+  hardDrop()
+}
+
+function holdCurrentPiece() {
+  if (gameOver) return
+  holdPiece()
+}
+
+document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft') {
-    current.x--
-    if (collide(current)) current.x++
+    moveLeft()
   } else if (e.key === 'ArrowRight') {
-    current.x++
-    if (collide(current)) current.x--
+    moveRight()
   } else if (e.key === 'ArrowDown') {
-    current.y++
-    if (collide(current)) {
-      current.y--
-      lockAndContinue()
-    }
+    softDrop()
   } else if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'x') {
-    rotateCurrent()
+    rotatePiece()
   } else if (e.code === 'Space') {
     e.preventDefault()
-    hardDrop()
+    hardDropPiece()
   } else if (e.key.toLowerCase() === 'c') {
-    holdPiece()
+    holdCurrentPiece()
   }
 })
 
 document.getElementById('startBtn').addEventListener('click', resetGame)
+
+const actionMap = {
+  left: moveLeft,
+  right: moveRight,
+  down: softDrop,
+  rotate: rotatePiece,
+  drop: hardDropPiece,
+  hold: holdCurrentPiece
+}
+
+document.querySelectorAll('.m-btn').forEach((btn) => {
+  const act = btn.dataset.action
+  const handler = actionMap[act]
+  if (!handler) return
+
+  const trigger = (e) => {
+    e.preventDefault()
+    handler()
+  }
+
+  btn.addEventListener('click', trigger)
+  btn.addEventListener('touchstart', trigger, { passive: false })
+})
+
+let touchStartX = 0
+let touchStartY = 0
+let touchTime = 0
+canvas.addEventListener('touchstart', (e) => {
+  const t = e.changedTouches[0]
+  touchStartX = t.clientX
+  touchStartY = t.clientY
+  touchTime = Date.now()
+}, { passive: true })
+
+canvas.addEventListener('touchend', (e) => {
+  const t = e.changedTouches[0]
+  const dx = t.clientX - touchStartX
+  const dy = t.clientY - touchStartY
+  const dt = Date.now() - touchTime
+  const adx = Math.abs(dx)
+  const ady = Math.abs(dy)
+
+  if (dt < 220 && adx < 12 && ady < 12) {
+    rotatePiece()
+    return
+  }
+
+  if (adx > ady && adx > 24) {
+    if (dx > 0) moveRight()
+    else moveLeft()
+    return
+  }
+
+  if (ady > 24) {
+    if (dy > 0) {
+      if (dt < 180) hardDropPiece()
+      else softDrop()
+    } else {
+      holdCurrentPiece()
+    }
+  }
+}, { passive: true })
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
